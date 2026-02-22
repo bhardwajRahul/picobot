@@ -3,7 +3,7 @@
   <h1 align="center">Picobot</h1>
   <p align="center"><strong>The AI agent that runs anywhere — even on a $5 VPS.</strong></p>
   <p align="center">
-    <img src="https://img.shields.io/badge/binary-~8MB-brightgreen" alt="Binary Size">
+    <img src="https://img.shields.io/badge/binary-~10MB-brightgreen" alt="Binary Size">
     <img src="https://img.shields.io/badge/docker-~28MB-blue" alt="Docker Size">
     <img src="https://img.shields.io/badge/built_with-Go-00ADD8?logo=go" alt="Go">
     <img src="https://img.shields.io/badge/RAM-~10MB-orange" alt="Memory Usage">
@@ -14,7 +14,7 @@
 
 ---
 
-Love the idea of open-source AI agents like [OpenClaw](https://github.com/openclaw/openclaw) but tired of the bloat? **Picobot** gives you the same power — persistent memory, tool calling, skills, Telegram and Discord integration — in a single ~8MB binary that boots in milliseconds.
+Love the idea of open-source AI agents like [OpenClaw](https://github.com/openclaw/openclaw) but tired of the bloat? **Picobot** gives you the same power — persistent memory, tool calling, skills, Telegram and Discord integration — in a single ~10MB binary that boots in milliseconds.
 
 No Python. No Node. No 500MB container. Just one Go binary and a config file.
 
@@ -22,7 +22,7 @@ No Python. No Node. No 500MB container. Just one Go binary and a config file.
 
 | | Picobot | Typical Agent Frameworks |
 |---|---|---|
-| **Binary size** | ~8MB | 200MB+ (Python + deps) |
+| **Binary size** | ~10MB | 200MB+ (Python + deps) |
 | **Docker image** | ~28MB (Alpine) | 500MB–1GB+ |
 | **Cold start** | Instant | 5–30 seconds |
 | **RAM usage** | ~10MB idle | 200MB–1GB |
@@ -40,7 +40,6 @@ docker run -d --name picobot \
   -e OPENAI_API_BASE="https://openrouter.ai/api/v1" \
   -e PICOBOT_MODEL="google/gemini-2.5-flash" \
   -e TELEGRAM_BOT_TOKEN="your-telegram-token" \
-  -e DISCORD_BOT_TOKEN="your-discord-token" \
   -v ./picobot-data:/home/picobot/.picobot \
   --restart unless-stopped \
   louisho5/picobot:latest
@@ -64,8 +63,6 @@ services:
       - PICOBOT_MODEL=google/gemini-2.5-flash
       - TELEGRAM_BOT_TOKEN=your-telegram-token
       - TELEGRAM_ALLOW_FROM=your-user-id
-      - DISCORD_BOT_TOKEN=your-discord-token
-      - DISCORD_ALLOW_FROM=your-discord-user-id
     volumes:
       - ./picobot-data:/home/picobot/.picobot
 ```
@@ -157,21 +154,11 @@ Connect your agent to Discord servers:
 2. Create a new application and bot
 3. Enable **Message Content Intent** in Bot settings
 4. Copy the bot token
-5. Add to config under `channels.discord`
-
-```json
-{
-  "channels": {
-    "discord": {
-      "enabled": true,
-      "token": "YOUR_BOT_TOKEN",
-      "allowFrom": ["USER_ID_1", "USER_ID_2"]
-    }
-  }
-}
-```
+5. Add to config under `channels.discord` in your `config.json`
 
 The bot will respond when mentioned in servers, or to all messages in DMs.
+
+See [HOW_TO_START.md](HOW_TO_START.md) for a detailed Discord Bot walkthrough.
 
 ### Heartbeat
 
@@ -281,6 +268,7 @@ docker/               Dockerfile, compose, entrypoint
 - [x] Add Discord support
 - [ ] Add WhatsApp support
 - [x] AI agent with skill creation capability
+- [ ] Integrate with MCP Servers
 - [ ] Integrate additional useful default skills
 - [ ] Add more tools (email, file processing, etc.)
 

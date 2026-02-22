@@ -1,5 +1,8 @@
 # Binaries
 /picobot
+/picobot_linux_amd64
+/picobot_linux_arm64
+/picobot_mac_arm64
 *.exe
 
 # Go build
