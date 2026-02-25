@@ -79,6 +79,7 @@ docker compose up -d
 go build -o picobot ./cmd/picobot
 ./picobot onboard                     # creates ~/.picobot config + workspace
 ./picobot agent -m "Hello!"           # single-shot query
+./picobot channels login              # login to channels (Telegram, Discord, WhatsApp)
 ./picobot gateway                     # long-running mode with Telegram
 ```
 
@@ -208,6 +209,7 @@ picobot version                        # print version
 picobot onboard                        # create config + workspace
 picobot agent -m "..."                 # one-shot query
 picobot agent -M model -m "..."        # query with specific model
+picobot channels login                 # login to channels (Telegram, Discord, WhatsApp)
 picobot gateway                        # start long-running agent
 picobot memory read today|long         # read memory
 picobot memory append today|long -c "" # append to memory

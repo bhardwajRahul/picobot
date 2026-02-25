@@ -131,6 +131,12 @@ Edit `~/.picobot/workspace/USER.md` to fill in your name, timezone, preferences,
 ./picobot agent -M "google/gemini-2.5-flash" -m "What is 2+2?"
 ```
 
+### Login to channels (Telegram, Discord, WhatsApp)
+
+```sh
+./picobot channels login
+```
+
 ### Start the gateway (long-running mode)
 
 ```sh
@@ -230,6 +236,18 @@ Send a message to [@userinfobot](https://t.me/userinfobot) on Telegram — it wi
 
 ### 5. Configure Picobot
 
+#### Option 1
+
+Run the interactive channel login wizard:
+
+```sh
+./picobot channels login
+```
+
+Select **1) Telegram**, then follow the prompts — it will ask for your bot token and your user ID, enable the channel, and save the config automatically.
+
+#### Option 2
+
 Edit `~/.picobot/config.json` and add your Telegram settings:
 
 ```json
@@ -322,6 +340,18 @@ Go to the **OAuth2** tab → **URL Generator**:
 4. Select the server to add the bot to
 
 ### 7. Configure Picobot
+
+#### Option 1
+
+Run the interactive channel login wizard:
+
+```sh
+./picobot channels login
+```
+
+Select **2) Discord**, then follow the prompts — it will ask for your bot token and your user ID, enable the channel, and save the config automatically.
+
+#### Option 2
 
 Edit `~/.picobot/config.json` and add your Discord settings:
 
