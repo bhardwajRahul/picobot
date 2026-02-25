@@ -200,7 +200,7 @@ Uses a personal WhatsApp account (via [whatsmeow](https://go.mau.fi/whatsmeow)) 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `enabled` | bool | `false` | Set to `true` to start the WhatsApp channel. |
-| `dbPath` | string | `~/.picobot/whatsapp.db` | Path to the SQLite session database. Created automatically by `picobot onboard whatsapp`. |
+| `dbPath` | string | `~/.picobot/whatsapp.db` | Path to the SQLite session database. Created automatically by `picobot channels login`. |
 | `allowFrom` | string[] | `[]` | List of **LID numbers** allowed to send messages. Empty `[]` = allow everyone. See below. |
 
 ```json
@@ -217,9 +217,9 @@ Uses a personal WhatsApp account (via [whatsmeow](https://go.mau.fi/whatsmeow)) 
 
 **One-time setup:** Link your phone by running:
 ```
-picobot onboard whatsapp
+picobot channels login
 ```
-This shows a QR code. In WhatsApp on your phone: **Settings → Linked Devices → Link a Device**. The session is saved to `dbPath` — no QR code is needed on subsequent starts. The config is updated automatically.
+Select **3) WhatsApp**. This shows a QR code. In WhatsApp on your phone: **Settings → Linked Devices → Link a Device**. The session is saved to `dbPath` — no QR code is needed on subsequent starts. The config is updated automatically.
 
 #### Finding your LID for allowFrom
 

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"os"
@@ -43,7 +44,7 @@ func NewRootCmd() *cobra.Command {
 
 	onboardCmd := &cobra.Command{
 		Use:   "onboard",
-		Short: "Create default config and workspace, or onboard a specific channel",
+		Short: "Create default config and workspace",
 		Run: func(cmd *cobra.Command, args []string) {
 			cfgPath, workspacePath, err := config.Onboard()
 			if err != nil {
@@ -54,46 +55,57 @@ func NewRootCmd() *cobra.Command {
 		},
 	}
 
-	onboardCmd.AddCommand(&cobra.Command{
-		Use:   "whatsapp",
-		Short: "Setup WhatsApp authentication (shows QR code)",
+	rootCmd.AddCommand(onboardCmd)
+
+	// channels command — connect and configure messaging channels interactively.
+	channelsCmd := &cobra.Command{
+		Use:   "channels",
+		Short: "Manage channel connections (Telegram, Discord, WhatsApp)",
+	}
+
+	loginCmd := &cobra.Command{
+		Use:   "login",
+		Short: "Interactively connect a channel (Telegram, Discord, or WhatsApp)",
 		Run: func(cmd *cobra.Command, args []string) {
+			reader := bufio.NewReader(os.Stdin)
+
+			fmt.Println("Which channel would you like to connect?")
+			fmt.Println()
+			fmt.Println("  1) Telegram")
+			fmt.Println("  2) Discord")
+			fmt.Println("  3) WhatsApp")
+			fmt.Println()
+			fmt.Print("Enter 1, 2 or 3: ")
+
+			choice, _ := reader.ReadString('\n')
+			choice = strings.TrimSpace(strings.ToLower(choice))
+
 			cfg, err := config.LoadConfig()
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "failed to load config: %v\n", err)
 				return
 			}
-			dbPath := cfg.Channels.WhatsApp.DBPath
-			if dbPath == "" {
-				dbPath = "~/.picobot/whatsapp.db"
-			}
-			// Expand home directory
-			home, _ := os.UserHomeDir()
-			if strings.HasPrefix(dbPath, "~/") {
-				dbPath = filepath.Join(home, dbPath[2:])
-			}
-			if err := channels.SetupWhatsApp(dbPath); err != nil {
-				fmt.Fprintf(os.Stderr, "WhatsApp setup failed: %v\n", err)
+			cfgPath, _, err := config.ResolveDefaultPaths()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "failed to resolve config path: %v\n", err)
 				return
 			}
 
-			// Activate the channel in config.json automatically.
-			cfg.Channels.WhatsApp.Enabled = true
-			cfg.Channels.WhatsApp.DBPath = dbPath
-			cfgPath, _, err := config.ResolveDefaultPaths()
-			if err == nil {
-				if saveErr := config.SaveConfig(cfg, cfgPath); saveErr != nil {
-					fmt.Fprintf(os.Stderr, "warning: could not save config: %v\n", saveErr)
-				} else {
-					fmt.Printf("Config updated: whatsapp enabled, dbPath set to %s\n", dbPath)
-				}
+			switch choice {
+			case "1", "telegram":
+				setupTelegramInteractive(reader, cfg, cfgPath)
+			case "2", "discord":
+				setupDiscordInteractive(reader, cfg, cfgPath)
+			case "3", "whatsapp":
+				setupWhatsAppInteractive(cfg, cfgPath)
+			default:
+				fmt.Fprintf(os.Stderr, "invalid choice %q — please enter 1, 2 or 3\n", choice)
 			}
-
-			fmt.Println("\nWhatsApp setup complete! Run 'picobot gateway' to start.")
 		},
-	})
+	}
 
-	rootCmd.AddCommand(onboardCmd)
+	channelsCmd.AddCommand(loginCmd)
+	rootCmd.AddCommand(channelsCmd)
 
 	agentCmd := &cobra.Command{
 		Use:   "agent",
@@ -452,4 +464,135 @@ func main() {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
+}
+
+// promptLine prints a prompt and returns the trimmed input line.
+func promptLine(reader *bufio.Reader, prompt string) string {
+	fmt.Print(prompt)
+	line, _ := reader.ReadString('\n')
+	return strings.TrimSpace(line)
+}
+
+// parseAllowFrom splits a comma-separated string into a trimmed slice.
+// Returns an empty slice (not nil) if the input is blank.
+func parseAllowFrom(s string) []string {
+	var out []string
+	for _, part := range strings.Split(s, ",") {
+		part = strings.TrimSpace(part)
+		if part != "" {
+			out = append(out, part)
+		}
+	}
+	if out == nil {
+		return []string{}
+	}
+	return out
+}
+
+func setupTelegramInteractive(reader *bufio.Reader, cfg config.Config, cfgPath string) {
+	fmt.Println()
+	fmt.Println("=== Telegram Setup ===")
+	fmt.Println()
+	fmt.Println("You need a bot token from @BotFather on Telegram:")
+	fmt.Println("  1. Message @BotFather on Telegram")
+	fmt.Println("  2. Send /newbot and follow the prompts")
+	fmt.Println("  3. Copy the token it gives you")
+	fmt.Println()
+
+	token := promptLine(reader, "Bot token: ")
+	if token == "" {
+		fmt.Fprintln(os.Stderr, "error: token cannot be empty")
+		return
+	}
+
+	fmt.Println()
+	fmt.Println("To restrict who can message your bot, enter your Telegram user ID.")
+	fmt.Println("Find it by messaging @userinfobot on Telegram.")
+	fmt.Println("Leave blank to allow everyone.")
+	fmt.Println()
+
+	allowFromStr := promptLine(reader, "Allowed user IDs (comma-separated, blank = everyone): ")
+	allowFrom := parseAllowFrom(allowFromStr)
+
+	cfg.Channels.Telegram.Enabled = true
+	cfg.Channels.Telegram.Token = token
+	cfg.Channels.Telegram.AllowFrom = allowFrom
+
+	if err := config.SaveConfig(cfg, cfgPath); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to save config: %v\n", err)
+		return
+	}
+
+	fmt.Println()
+	fmt.Println("Telegram configured! Run 'picobot gateway' to start.")
+}
+
+func setupDiscordInteractive(reader *bufio.Reader, cfg config.Config, cfgPath string) {
+	fmt.Println()
+	fmt.Println("=== Discord Setup ===")
+	fmt.Println()
+	fmt.Println("You need a bot token from the Discord Developer Portal:")
+	fmt.Println("  1. Go to https://discord.com/developers/applications")
+	fmt.Println("  2. Create an application → Bot → Reset Token")
+	fmt.Println("  3. Enable \"Message Content Intent\" under Privileged Gateway Intents")
+	fmt.Println("  4. Invite the bot to your server via OAuth2 → URL Generator")
+	fmt.Println("  5. Copy the token and paste it below")
+	fmt.Println()
+
+	token := promptLine(reader, "Bot token: ")
+	if token == "" {
+		fmt.Fprintln(os.Stderr, "error: token cannot be empty")
+		return
+	}
+
+	fmt.Println()
+	fmt.Println("To restrict who can message your bot, enter Discord user IDs.")
+	fmt.Println("Enable Developer Mode (Settings → Advanced) then right-click your name → Copy User ID.")
+	fmt.Println("Leave blank to allow everyone.")
+	fmt.Println()
+
+	allowFromStr := promptLine(reader, "Allowed user IDs (comma-separated, blank = everyone): ")
+	allowFrom := parseAllowFrom(allowFromStr)
+
+	cfg.Channels.Discord.Enabled = true
+	cfg.Channels.Discord.Token = token
+	cfg.Channels.Discord.AllowFrom = allowFrom
+
+	if err := config.SaveConfig(cfg, cfgPath); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to save config: %v\n", err)
+		return
+	}
+
+	fmt.Println()
+	fmt.Println("Discord configured! Run 'picobot gateway' to start.")
+}
+
+func setupWhatsAppInteractive(cfg config.Config, cfgPath string) {
+	fmt.Println()
+	fmt.Println("=== WhatsApp Setup ===")
+	fmt.Println()
+
+	dbPath := cfg.Channels.WhatsApp.DBPath
+	if dbPath == "" {
+		dbPath = "~/.picobot/whatsapp.db"
+	}
+	home, _ := os.UserHomeDir()
+	if strings.HasPrefix(dbPath, "~/") {
+		dbPath = filepath.Join(home, dbPath[2:])
+	}
+
+	if err := channels.SetupWhatsApp(dbPath); err != nil {
+		fmt.Fprintf(os.Stderr, "WhatsApp setup failed: %v\n", err)
+		return
+	}
+
+	cfg.Channels.WhatsApp.Enabled = true
+	cfg.Channels.WhatsApp.DBPath = dbPath
+	if saveErr := config.SaveConfig(cfg, cfgPath); saveErr != nil {
+		fmt.Fprintf(os.Stderr, "warning: could not save config: %v\n", saveErr)
+	} else {
+		fmt.Printf("Config updated: whatsapp enabled, dbPath set to %s\n", dbPath)
+	}
+
+	fmt.Println("\nWhatsApp setup complete! Run 'picobot gateway' to start.")
 }

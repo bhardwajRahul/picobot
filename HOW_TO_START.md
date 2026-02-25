@@ -145,6 +145,7 @@ This starts the agent loop, heartbeat, and any enabled channels (e.g., Telegram,
 |---------|-------------|
 | `picobot version` | Print version |
 | `picobot onboard` | Create default config and workspace |
+| `picobot channels login` | Interactively connect Telegram, Discord, or WhatsApp |
 | `picobot agent -m "..."` | Run a single-shot agent query |
 | `picobot agent -M model -m "..."` | Query with a specific model |
 | `picobot gateway` | Start long-running gateway |
@@ -177,6 +178,20 @@ The agent has access to 11 tools:
 ## Setting Up Telegram (BotFather Guide)
 
 To chat with Picobot on Telegram, you need to create a bot via **@BotFather**.
+
+### Quick setup (recommended)
+
+Run the interactive channel login wizard:
+
+```sh
+./picobot channels login
+```
+
+Select **1) Telegram**, then follow the prompts — it will ask for your bot token and your user ID, enable the channel, and save the config automatically.
+
+### Manual setup
+
+If you prefer to edit the config directly, follow the steps below.
 
 ### 1. Open BotFather
 
@@ -261,6 +276,20 @@ You can also send these commands to @BotFather to polish your bot:
 
 To connect Picobot to Discord, you need to create a bot application in the Discord Developer Portal.
 
+### Quick setup (recommended)
+
+Run the interactive channel login wizard:
+
+```sh
+./picobot channels login
+```
+
+Select **2) Discord**, then follow the prompts — it will ask for your bot token and your user ID, enable the channel, and save the config automatically.
+
+### Manual setup
+
+If you prefer to edit the config directly, follow the steps below.
+
 ### 1. Create a Discord Application
 
 Go to the [Discord Developer Portal](https://discord.com/developers/applications) and click **"New Application"**. Give it a name (e.g., `Picobot`).
@@ -334,13 +363,15 @@ Picobot can receive and reply to WhatsApp messages. It uses [whatsmeow](https://
 
 > **One-time pairing is required.** You need physical access to the phone that will be linked. After pairing, the bot runs headlessly.
 
-### 1. Run the Onboard Command
+> **Full build required.** WhatsApp is not included in the lite build. If you built with `-tags lite`, rebuild without it.
+
+### 1. Run the Channel Login Wizard
 
 ```sh
-./picobot onboard whatsapp
+./picobot channels login
 ```
 
-This will:
+Select **3) WhatsApp**. This will:
 1. Display a QR code in the terminal
 2. Wait for you to scan it with WhatsApp on your phone:
    - Open WhatsApp → **Settings** → **Linked Devices** → **Link a Device**
@@ -350,6 +381,16 @@ This will:
 You should see:
 
 ```
+Which channel would you like to connect?
+
+  1) Telegram
+  2) Discord
+  3) WhatsApp
+
+Enter 1, 2 or 3: 3
+
+=== WhatsApp Setup ===
+
 Scan the QR code below with WhatsApp on your phone:
 (Open WhatsApp > Settings > Linked Devices > Link a Device)
 
@@ -394,7 +435,7 @@ Edit `~/.picobot/config.json` to set who can send messages:
 | Field | Description |
 |-------|-------------|
 | `enabled` | `true` to activate the WhatsApp channel |
-| `dbPath` | Path to the SQLite session file (auto-set by `picobot onboard whatsapp`) |
+| `dbPath` | Path to the SQLite session file (auto-set by `picobot channels login`) |
 | `allowFrom` | List of LID numbers allowed to send messages. Empty `[]` = anyone can send |
 
 **To allow yourself only**, add your own LID. **To allow all**, leave `allowFrom` as `[]`.
@@ -419,11 +460,12 @@ Send a message from your allowed number (or from Notes to Self) — Picobot will
 
 ### Running in Docker
 
-WhatsApp requires a **one-time interactive QR scan** before the bot can run headlessly. Use `docker-compose run` with a TTY for the initial pairing:
+WhatsApp requires a **one-time interactive QR scan** before the bot can run headlessly. Use `docker compose run` with a TTY for the initial pairing:
 
 ```sh
 # Step 1: Pair (interactive — scan the QR with your phone)
-docker compose run --rm -it picobot onboard whatsapp
+docker compose run --rm -it picobot channels login
+# Select 3) WhatsApp and scan the QR code.
 # The SQLite session DB is saved into ./picobot-data/
 
 # Step 2: Start normally

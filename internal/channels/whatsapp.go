@@ -106,7 +106,7 @@ func StartWhatsApp(ctx context.Context, hub *chat.Hub, dbPath string, allowFrom 
 
 	rawClient := whatsmeow.NewClient(deviceStore, whatsappLogger{})
 	if rawClient.Store.ID == nil {
-		return fmt.Errorf("whatsapp not authenticated - please run 'picobot onboard whatsapp' first")
+		return fmt.Errorf("whatsapp not authenticated - please run 'picobot channels login' and select WhatsApp")
 	}
 
 	sender := &realWhatsAppSender{c: rawClient}

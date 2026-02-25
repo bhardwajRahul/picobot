@@ -54,7 +54,10 @@ The binary will be created in the current directory.
 # Try a quick query
 ./picobot agent -m "Hello!"
 
-# Start the full gateway (includes Telegram, Discord, heartbeat, etc.)
+# Login to channels (Telegram, Discord, WhatsApp)
+./picobot channels login
+
+# Start the full gateway (includes channels, heartbeat, etc.)
 ./picobot gateway
 ```
 
