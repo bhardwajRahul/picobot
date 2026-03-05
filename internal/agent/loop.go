@@ -2,6 +2,8 @@ package agent
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"regexp"
@@ -17,6 +19,21 @@ import (
 )
 
 var rememberRE = regexp.MustCompile(`(?i)^remember(?:\s+to)?\s+(.+)$`)
+
+// sendChannelNotification delivers a non-blocking status message back to the
+// originating channel so the user can see tool progress in real time.
+// It is a no-op for system channels (heartbeat, cron) that have no user-facing chat.
+func sendChannelNotification(hub *chat.Hub, channel, chatID, content string) {
+	if isSystemChannel(channel) {
+		return
+	}
+	out := chat.Outbound{Channel: channel, ChatID: chatID, Content: content}
+	select {
+	case hub.Out <- out:
+	default:
+		log.Println("sendChannelNotification: outbound channel full, dropping notification")
+	}
+}
 
 // isSystemChannel reports whether a channel is a background/system trigger
 // (heartbeat, cron) rather than an interactive user-facing channel.
@@ -180,11 +197,23 @@ func (a *AgentLoop) Run(ctx context.Context) {
 				if resp.HasToolCalls {
 					// append assistant message with tool_calls attached
 					messages = append(messages, providers.Message{Role: "assistant", Content: resp.Content, ToolCalls: resp.ToolCalls})
-					// Execute each tool call and return results with "tool" role
+					// execute each tool call and return results with "tool" role
 					for _, tc := range resp.ToolCalls {
+						argsJSON, _ := json.Marshal(tc.Arguments)
+						sendChannelNotification(a.hub, msg.Channel, msg.ChatID,
+							fmt.Sprintf("🤖 Running: %s %s", tc.Name, argsJSON))
+
+						start := time.Now()
 						res, err := a.tools.Execute(ctx, tc.Name, tc.Arguments)
+						elapsed := time.Since(start).Round(time.Millisecond)
+
 						if err != nil {
+							sendChannelNotification(a.hub, msg.Channel, msg.ChatID,
+								fmt.Sprintf("📢 %s failed (%s): %v", tc.Name, elapsed, err))
 							res = "(tool error) " + err.Error()
+						} else {
+							sendChannelNotification(a.hub, msg.Channel, msg.ChatID,
+								fmt.Sprintf("📢 %s done (%s)", tc.Name, elapsed))
 						}
 						lastToolResult = res
 						messages = append(messages, providers.Message{Role: "tool", Content: res, ToolCallID: tc.ID})
