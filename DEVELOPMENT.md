@@ -88,14 +88,9 @@ go vet ./...
 The project uses [golangci-lint](https://golangci-lint.run/) to enforce code quality. Install it first if you haven't already:
 
 ```sh
-go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+curl -sSfL https://golangci-lint.run/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.11.1
+golangci-lint --version
 ```
-
-> If you get `zsh: command not found: golangci-lint` after installing, add the Go bin directory to your PATH:
-> ```sh
-> export PATH="$PATH:$(go env GOPATH)/bin"
-> # Make it permanent — add the line above to ~/.zshrc or ~/.bashrc
-> ```
 
 ```sh
 # Lint all packages

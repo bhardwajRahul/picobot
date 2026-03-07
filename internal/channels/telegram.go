@@ -63,7 +63,7 @@ func StartTelegramWithBase(ctx context.Context, hub *chat.Hub, token, base strin
 				continue
 			}
 			body, _ := io.ReadAll(resp.Body)
-			_ = resp.Body.Close()
+			resp.Body.Close()
 			var gu struct {
 				Ok     bool `json:"ok"`
 				Result []struct {
@@ -137,8 +137,8 @@ func StartTelegramWithBase(ctx context.Context, hub *chat.Hub, token, base strin
 					log.Printf("telegram sendMessage error: %v", err)
 					continue
 				}
-				_, _ = io.ReadAll(resp.Body)
-				_ = resp.Body.Close()
+				io.ReadAll(resp.Body)
+				resp.Body.Close()
 			}
 		}
 	}()

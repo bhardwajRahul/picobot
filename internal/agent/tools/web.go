@@ -43,7 +43,7 @@ func (t *WebTool) Execute(ctx context.Context, args map[string]interface{}) (str
 	if err != nil {
 		return "", err
 	}
-	defer func() { _ = resp.Body.Close() }()
+	defer resp.Body.Close()
 	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
